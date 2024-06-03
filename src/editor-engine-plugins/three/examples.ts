@@ -55,14 +55,19 @@ import { MenuItem } from '@editor-components/ContextMenu';
 import { AnySceneConfig } from '@editor-components/editorTypes';
 
 export enum Example {
-  GLASS_FIREBALL = 'Glass Fireball',
-  GEMSTONE = 'Gemstone',
-  LIVING_DIAMOND = 'Living Diamond',
+  GLASS_FIREBALL = 'Glass Fireball', // has vertex distortion
+
+  GEMSTONE = 'Gemstone', // using heatmap 
+ // http://blogs.msdn.com/b/eternalcoding/archive/2014/04/17/learning-shaders-create-your-own-shaders-with-babylon-js.aspx
+
+  LIVING_DIAMOND = 'Living Diamond', // this is a physical with textureed normal 
+
   VERTEX_NOISE = 'Vertex Noise',
-  TOON = 'Toon',
+  
+  TOON = 'Toon',  // can't find the gradient texture for toon, need texture fix asset first
   EMPTY = 'Empty',
   PHYSICAL = 'Mesh Physical Material',
-  DEFAULT = 'Mesh Physical Material',
+  DEFAULT = 'Mesh Physical Material', 
 }
 
 const edgeFrom = (
@@ -79,6 +84,12 @@ export const makeExampleGraph = (example: string): [Graph, AnySceneConfig] => {
   let newGraph: Graph;
   let previewObject: string;
   let bg: string = '';
+
+  // example = Example.PHYSICAL // my checker
+  // example = Example.GEMSTONE // my checker
+  example = Example.EMPTY // my checker
+
+  console.log("three example",example)
 
   if (example === Example.GEMSTONE) {
     const outputF = outputNode(
@@ -310,6 +321,12 @@ export const makeExampleGraph = (example: string): [Graph, AnySceneConfig] => {
       [],
       'vertex'
     );
+    const metalness = numberNode(
+      makeId(),
+      'Normal Strength',
+      { x: -482, y: -105 },
+      '0.88'
+    );
 
     const checkerboardf = checkerboardF(makeId(), { x: -162, y: -105 });
     const checkerboardv = checkerboardV(makeId(), {
@@ -324,17 +341,19 @@ export const makeExampleGraph = (example: string): [Graph, AnySceneConfig] => {
         physicalV,
         checkerboardf,
         checkerboardv,
+        metalness,
       ],
       edges: [
         linkFromVertToFrag(makeId(), physicalV.id, physicalF.id),
         linkFromVertToFrag(makeId(), checkerboardv.id, checkerboardf.id),
         edgeFrom(physicalF, outputF.id, 'filler_frogFragOut', 'fragment'),
         edgeFrom(physicalV, outputV.id, 'filler_gl_Position', 'vertex'),
+        edgeFrom(metalness, physicalF.id, 'property_metalness', 'fragment'),
         edgeFrom(
           checkerboardf,
           physicalF.id,
           threngine.name === 'three'
-            ? 'property_map'
+            ? 'property_roughnessMap'
             : 'property_albedoTexture',
           'fragment'
         ),
